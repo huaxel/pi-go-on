@@ -25,4 +25,20 @@ jobs:
       - run: npm pack --dry-run
       - run: bash -n scripts/*.sh
       - run: ./scripts/verify-load.sh
+      - name: Refuse to republish an existing version
+        run: |
+          set -euo pipefail
+          PACKAGE=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          ENCODED=$(node -p "encodeURIComponent(require('./package.json').name)")
+          CODE=$(curl -sS -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/$ENCODED/$VERSION")
+          if [ "$CODE" = "200" ]; then
+            echo "::error::$PACKAGE@$VERSION already exists on npm; bump the version before publishing."
+            exit 1
+          fi
+          if [ "$CODE" != "404" ]; then
+            echo "::error::Registry lookup for $PACKAGE@$VERSION returned HTTP $CODE; refusing to publish."
+            exit 1
+          fi
+          echo "$PACKAGE@$VERSION is unpublished; proceeding."
       - run: npm publish --access public
