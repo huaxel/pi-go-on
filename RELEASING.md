@@ -16,7 +16,7 @@ npm requires the package to exist before a trusted publisher can be configured. 
    - Workflow filename: `publish.yml` (filename only, not the `.github/workflows/` path)
    - Environment: `npm-release`
    - Allowed action: `npm publish`
-5. Configure the GitHub `npm-release` environment with required reviewers if approval should be required before future publish runs. The first trusted-publisher publish must succeed within npm's two-day validation window.
+5. Configure the GitHub `npm-release` environment to restrict deployments to the `main` branch. Optionally add required reviewers as an additional approval gate. The workflow also refuses runs not dispatched from `main`. The first trusted-publisher publish must succeed within npm's two-day validation window.
 
 ## Each later release
 
