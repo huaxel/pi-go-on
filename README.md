@@ -33,10 +33,10 @@ Auto mode is intentionally bounded and heuristic. The extension's completion det
 npm ci
 npm test
 npm run typecheck
-./scripts/verify-load.sh   # needs a local pi; skips otherwise
+./scripts/verify-load.sh   # uses node_modules/.bin/pi after npm ci
 ```
 
-`npm test` mocks the extension API. `scripts/verify-load.sh` is the end-to-end counterpart: it starts a real Pi in RPC mode, loads this package through its manifest, and fails unless the `/go-on-mode` command is registered.
+`npm test` mocks the extension API. `scripts/verify-load.sh` is the end-to-end counterpart: it starts a real Pi in RPC mode (the CLI bundled with the SDK dev dependency, or `$PI_BIN`/`pi` on PATH), loads this package through its manifest with an isolated agent directory and no network, and fails unless the `/go-on-mode` command is registered. CI runs this check, so an extension that breaks Pi startup cannot be released.
 
 For the one-time npm bootstrap and trusted-publishing setup, see [RELEASING.md](RELEASING.md) and run `./scripts/npm-release-setup.sh` from a checkout. The wizard asks for confirmation before the initial irreversible npm publish and never stores credentials.
 
