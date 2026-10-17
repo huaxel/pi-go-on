@@ -14,6 +14,8 @@ REPO_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 EXPECTED_COMMAND=${EXPECTED_COMMAND:-go-on-mode}
 DEADLINE_SECONDS=${DEADLINE_SECONDS:-30}
 VERIFY_FROM_TARBALL=${VERIFY_FROM_TARBALL:-0}
+# Optional explicit directory to load; overrides the working tree and tarball modes.
+LOAD_DIR=${LOAD_DIR:-}
 
 PI_BIN=${PI_BIN:-}
 if [ -z "$PI_BIN" ] && [ -x "$REPO_DIR/node_modules/.bin/pi" ]; then
@@ -57,7 +59,14 @@ trap cleanup EXIT
 # the tarball's own contents so a wrong `files` list or manifest cannot ship.
 load_dir="$REPO_DIR"
 label="working tree"
-if [ "$VERIFY_FROM_TARBALL" = "1" ]; then
+if [ -n "$LOAD_DIR" ]; then
+  load_dir="$LOAD_DIR"
+  label="prepared copy $LOAD_DIR"
+  if [ ! -f "$load_dir/index.ts" ]; then
+    echo "FAIL: LOAD_DIR=$LOAD_DIR does not contain index.ts" >&2
+    exit 1
+  fi
+elif [ "$VERIFY_FROM_TARBALL" = "1" ]; then
   pack_dir=$(mktemp -d)
   (cd "$REPO_DIR" && npm pack --silent --pack-destination "$pack_dir" >/dev/null)
   tarball=$(ls "$pack_dir"/*.tgz 2>/dev/null | head -1)

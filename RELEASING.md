@@ -7,7 +7,7 @@ Trusted publishing is configured and validated; the release path is complete.
 - `0.1.0` was the manual first publish. The registry also holds `0.0.0-stage`, npm's placeholder from the staged first publish: it has no dist-tag and nothing resolves to it. Leave it alone.
 - `0.1.1` is `latest`, published by the **Publish to npm** workflow through OIDC with a signed SLSA provenance attestation. This validated the trusted publisher.
 - The `npm-release` environment exists and is restricted to the `main` branch. No required reviewers are configured.
-- The published tarball was checked against the repository: `0.1.1`'s `index.ts` is byte-identical to `main`, and its shasum matches the CI build output.
+- The published tarball was checked against the repository: `0.1.1`'s `index.ts` is byte-identical to `main`, its shasum matches the CI build output, and `./scripts/verify-release.sh` reports it verified end to end.
 
 Run `./scripts/npm-release-setup.sh` from a clean `main` checkout for the staged one-time npm bootstrap. It stops after the initial publish so the next version can be prepared and pushed before trusted-publisher setup. Publishing is a deliberate manual action. CI does not publish on pushes or tags.
 
@@ -40,7 +40,7 @@ npm requires the package to exist before a trusted publisher can be configured. 
 1. Review the changes and update `version` in `package.json` and the matching lockfile metadata.
 2. Confirm CI passes on `main` and the npm package version is unused.
 3. For the initial OIDC validation, within two days of configuring the trusted publisher, manually run **Publish to npm** on the reviewed `main` branch. For later releases, run it after CI passes for the intended version. The workflow repeats tests, typecheck, audit, and pack checks before publishing via npm's OIDC trusted-publishing support.
-4. Verify the resulting npm version and provenance page. Do not rerun a failed publish without checking whether that version was already published.
+4. Verify the release with `./scripts/verify-release.sh`, which checks the registry metadata, the provenance attestation, the downloaded tarball bytes against the registry shasum, working-tree parity, and that the published extension loads and registers its command in a real Pi runtime. Do not rerun a failed publish without checking whether that version was already published.
 
 ## Diagnosing an OIDC publish failure
 

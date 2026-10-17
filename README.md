@@ -35,9 +35,12 @@ npm test
 npm run typecheck
 ./scripts/verify-load.sh   # uses node_modules/.bin/pi after npm ci
 VERIFY_FROM_TARBALL=1 ./scripts/verify-load.sh   # what consumers install
+./scripts/verify-release.sh   # verify a published release (needs network)
 ```
 
 `npm test` mocks the extension API. `scripts/verify-load.sh` is the end-to-end counterpart: it starts a real Pi in RPC mode (the CLI bundled with the SDK dev dependency, or `$PI_BIN`/`pi` on PATH), loads this package through its manifest with an isolated agent directory and no network, and fails unless the `/go-on-mode` command is registered. With `VERIFY_FROM_TARBALL=1` it first packs the package and loads the extracted tarball instead of the working tree, so a wrong `files` list or manifest cannot ship. CI runs both, and the publish workflow runs them again before `npm publish`.
+
+`scripts/verify-release.sh [version]` checks a published release the way a consumer meets it: registry metadata, provenance attestation, downloaded tarball bytes against the registry shasum, working-tree parity, and a real runtime load of the published artifact. Run it after each release; maintainers can use it to confirm a release without trusting the build log.
 
 For the one-time npm bootstrap and trusted-publishing setup, see [RELEASING.md](RELEASING.md) and run `./scripts/npm-release-setup.sh` from a checkout. The wizard asks for confirmation before the initial irreversible npm publish and never stores credentials.
 

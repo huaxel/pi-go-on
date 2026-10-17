@@ -7,6 +7,11 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const workflow = await readFile(`${root}.github/workflows/publish.yml`, "utf8");
 const wizard = await readFile(`${root}scripts/npm-release-setup.sh`, "utf8");
 const manifest = JSON.parse(await readFile(`${root}package.json`, "utf8"));
+const releasing = await readFile(`${root}RELEASING.md`, "utf8");
+
+test("the release guide keeps pointing at the published-release check", () => {
+  assert.match(releasing, /verify-release\.sh/, "RELEASING.md must document the post-publish verification command");
+});
 
 test("a direct npm publish still runs the tests and typecheck", () => {
   assert.match(
