@@ -1,0 +1,27 @@
+# Keep the toolchain current.
+#
+# Both ecosystems have already drifted here in ways that only surfaced during a
+# release: a pinned Pi SDK carried a vulnerable transitive `brace-expansion`,
+# and the workflows sat on action runtimes old enough to emit Node 20
+# deprecation warnings. This package has no runtime dependencies (peer
+# dependencies are supplied by the Pi host), so every npm update is a
+# development-only change and can be grouped.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      dev-dependencies:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      github-actions:
+        patterns: ["*"]
