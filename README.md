@@ -27,6 +27,10 @@ Each nudge asks Pi to inspect what is complete, select one high-value next step 
 
 Auto mode is intentionally bounded and heuristic. The extension's completion detection is phrase-based; the model still decides whether the task is actually complete or blocked. Keep the burst limit and user-visible stop control in mind for long runs.
 
+## Migrating from a standalone file copy
+
+If this extension is already loaded from a file path — for example an `extensions` entry in your Pi settings — remove that entry when you install the package. Pi tolerates the duplicate rather than failing: it disambiguates the command names (`go-on-mode:1`, `go-on-mode:2`) and reports no error. Both copies nevertheless stay active, registering the same shortcuts and both writing the `go-on-mode` status, so a burst can be armed twice. Enable exactly one copy.
+
 ## Development
 
 ```bash

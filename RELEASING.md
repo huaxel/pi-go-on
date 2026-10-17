@@ -52,3 +52,5 @@ Attempting the workflow before the trusted publisher exists fails at the final s
 Everything before the publish step (tests, typecheck, audit, pack, script syntax, runtime load check) runs and passes in the failing runs, so an auth failure means the release itself is fine and only the publisher configuration is missing or mismatched.
 
 The publish workflow is manual-only. Trusted publishing automatically generates provenance for eligible public releases; it does not require a long-lived npm token or `--provenance` flag.
+
+Consumers on an unpinned install (what the README's `pi install` produces) pick up a new version with `pi update --extensions`; a versioned install such as `npm:@juanbenjumea/pi-go-on@0.1.0` stays pinned by design until the settings entry changes.
