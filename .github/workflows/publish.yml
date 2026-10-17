@@ -1,0 +1,42 @@
+name: Publish to npm
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  attestations: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm-release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm audit
+      - run: npm pack --dry-run
+      - name: Exchange GitHub OIDC token for npm token
+        id: npm-token
+        run: |
+          set -euo pipefail
+          ID_TOKEN=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm:registry.npmjs.org" | jq -r '.value')
+          PACKAGE=$(node -p "encodeURIComponent(require('./package.json').name)")
+          RESPONSE=$(curl -sS -X POST -H "Authorization: Bearer $ID_TOKEN" \
+            "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/$PACKAGE")
+          echo "$RESPONSE" | jq -e '.token' >/dev/null || { echo "Token exchange failed"; exit 1; }
+          NPM_TOKEN=$(echo "$RESPONSE" | jq -r '.token')
+          echo "::add-mask::$NPM_TOKEN"
+          echo "token=$NPM_TOKEN" >> "$GITHUB_OUTPUT"
+      - run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ steps.npm-token.outputs.token }}
