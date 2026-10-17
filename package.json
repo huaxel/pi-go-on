@@ -40,6 +40,7 @@
   },
   "scripts": {
     "test": "tsx --test tests/*.test.mjs",
+    "prepublishOnly": "npm test && npm run typecheck",
     "typecheck": "tsc --noEmit --strict --allowImportingTsExtensions --moduleResolution bundler --module esnext --target esnext --skipLibCheck index.ts"
   },
   "files": [

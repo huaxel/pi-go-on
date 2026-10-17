@@ -6,6 +6,16 @@ import test from "node:test";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const workflow = await readFile(`${root}.github/workflows/publish.yml`, "utf8");
 const wizard = await readFile(`${root}scripts/npm-release-setup.sh`, "utf8");
+const manifest = JSON.parse(await readFile(`${root}package.json`, "utf8"));
+
+test("a direct npm publish still runs the tests and typecheck", () => {
+  assert.match(
+    manifest.scripts?.prepublishOnly ?? "",
+    /npm test/,
+    "prepublishOnly must run the tests: the first release was published by hand outside every gate",
+  );
+  assert.match(manifest.scripts.prepublishOnly, /typecheck/);
+});
 
 test("npm publication is manual and restricted to main", () => {
   assert.match(workflow, /on:\n\s+workflow_dispatch:/);
@@ -34,6 +44,10 @@ test("bootstrap wizard gates the irreversible first publish and never dispatches
   assert.ok(
     wizard.indexOf("./scripts/verify-load.sh") < wizard.indexOf("npm publish --access public"),
     "the bootstrap wizard must load-check before the first publish",
+  );
+  assert.ok(
+    wizard.indexOf("VERIFY_FROM_TARBALL=1") < wizard.indexOf("npm publish --access public"),
+    "the bootstrap wizard must load-check the packed tarball before publishing",
   );
   assert.ok(!/gh workflow run|gh api .*workflow_dispatch/.test(wizard));
 });

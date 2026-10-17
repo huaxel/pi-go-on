@@ -147,6 +147,7 @@ npm run typecheck
 npm audit
 npm pack --dry-run
 ./scripts/verify-load.sh
+VERIFY_FROM_TARBALL=1 ./scripts/verify-load.sh
 
 encoded_package=$(node -p "encodeURIComponent(require('./package.json').name)")
 http_code=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "https://registry.npmjs.org/$encoded_package")
