@@ -1,14 +1,20 @@
 {
   "name": "@juanbenjumea/pi-go-on",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Goal-aware autonomous continuation for Pi conversations",
   "type": "module",
   "license": "MIT",
   "author": "Juan Benjumea",
-  "keywords": ["pi-package", "pi-extension", "autonomy", "continuation", "workflow"],
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "autonomy",
+    "continuation",
+    "workflow"
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/huaxel/pi-go-on"
+    "url": "git+https://github.com/huaxel/pi-go-on.git"
   },
   "bugs": {
     "url": "https://github.com/huaxel/pi-go-on/issues"
@@ -18,7 +24,9 @@
     "node": ">=20.3.0"
   },
   "pi": {
-    "extensions": ["./index.ts"]
+    "extensions": [
+      "./index.ts"
+    ]
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": ">=0.80.0",
@@ -34,5 +42,9 @@
     "test": "tsx --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit --strict --allowImportingTsExtensions --moduleResolution bundler --module esnext --target esnext --skipLibCheck index.ts"
   },
-  "files": ["index.ts", "README.md", "LICENSE"]
+  "files": [
+    "index.ts",
+    "README.md",
+    "LICENSE"
+  ]
 }
