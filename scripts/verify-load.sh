@@ -8,7 +8,8 @@
 set -euo pipefail
 
 REPO_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-EXPECTED_COMMAND=go-on-mode
+EXPECTED_COMMAND=${EXPECTED_COMMAND:-go-on-mode}
+DEADLINE_SECONDS=${DEADLINE_SECONDS:-30}
 
 PI_BIN=${PI_BIN:-}
 if [ -z "$PI_BIN" ] && [ -x "$REPO_DIR/node_modules/.bin/pi" ]; then
@@ -23,21 +24,65 @@ if [ -z "$PI_BIN" ]; then
   exit 0
 fi
 
+# `timeout` is coreutils; stock macOS only has it via GNU coreutils (as
+# `gtimeout`), so fall back to running without a hard deadline there.
+with_timeout() {
+  if command -v timeout >/dev/null 2>&1; then
+    timeout 60 "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then
+    gtimeout 60 "$@"
+  else
+    "$@"
+  fi
+}
+
 agent_dir=$(mktemp -d)
 out=$(mktemp)
 err=$(mktemp)
-cleanup() { rm -rf "$agent_dir" "$out" "$err"; }
+fifo="$agent_dir/stdin.fifo"
+pi_pid=""
+
+cleanup() {
+  [ -n "$pi_pid" ] && kill "$pi_pid" 2>/dev/null || true
+  exec 3>&- 2>/dev/null || true
+  rm -rf "$agent_dir" "$out" "$err"
+}
 trap cleanup EXIT
 
 # No model turn is used, so no credentials are needed: keep the agent dir and
 # network isolated from the developer's real configuration.
-if ! {
-  printf '%s\n' '{"id":"verify-load","type":"get_commands"}'
-  sleep 6
-} | PI_CODING_AGENT_DIR="$agent_dir" PI_OFFLINE=1 timeout 60 "$PI_BIN" --mode rpc \
-  --no-session --no-mcp --no-extensions -e "$REPO_DIR" >"$out" 2>"$err"; then
-  echo "FAIL: $PI_BIN exited non-zero while loading $REPO_DIR" >&2
+mkfifo "$fifo"
+with_timeout env PI_CODING_AGENT_DIR="$agent_dir" PI_OFFLINE=1 "$PI_BIN" --mode rpc \
+  --no-session --no-mcp --no-extensions -e "$REPO_DIR" <"$fifo" >"$out" 2>"$err" &
+pi_pid=$!
+
+# Hold stdin open and close it only once the runtime has answered, so a slow
+# runner cannot race the response against an end-of-input shutdown.
+exec 3>"$fifo"
+printf '%s\n' '{"id":"verify-load","type":"get_commands"}' >&3 || true
+
+deadline=$((SECONDS + DEADLINE_SECONDS))
+registered=0
+while [ "$SECONDS" -lt "$deadline" ]; do
+  if grep -q "\"name\":\"$EXPECTED_COMMAND\"" "$out" 2>/dev/null; then
+    registered=1
+    break
+  fi
+  if ! kill -0 "$pi_pid" 2>/dev/null; then
+    break
+  fi
+  sleep 0.5
+done
+
+exec 3>&-
+pi_status=0
+wait "$pi_pid" || pi_status=$?
+pi_pid=""
+
+if [ "$registered" -ne 1 ]; then
+  echo "FAIL: /$EXPECTED_COMMAND was not registered by the loaded package (pi exit=$pi_status)" >&2
   grep -viE '^Warning: No models match' "$err" | head -20 >&2 || true
+  cut -c1-800 "$out" >&2 || true
   exit 1
 fi
 
@@ -47,9 +92,9 @@ if grep -viE '^Warning: No models match' "$err" | grep -qi 'extension'; then
   exit 1
 fi
 
-if ! grep -q "\"name\":\"$EXPECTED_COMMAND\"" "$out"; then
-  echo "FAIL: command /$EXPECTED_COMMAND was not registered by the loaded package" >&2
-  head -20 "$out" >&2 || true
+if [ "$pi_status" -ne 0 ]; then
+  echo "FAIL: $PI_BIN exited with status $pi_status while loading $REPO_DIR" >&2
+  grep -viE '^Warning: No models match' "$err" | head -20 >&2 || true
   exit 1
 fi
 
