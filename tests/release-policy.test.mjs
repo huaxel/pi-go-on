@@ -9,6 +9,22 @@ const wizard = await readFile(`${root}scripts/npm-release-setup.sh`, "utf8");
 const manifest = JSON.parse(await readFile(`${root}package.json`, "utf8"));
 const releasing = await readFile(`${root}RELEASING.md`, "utf8");
 
+test("every README link resolves for someone reading the published package", async () => {
+  const readme = await readFile(`${root}README.md`, "utf8");
+  const shipped = manifest.files ?? [];
+  const targets = [...readme.matchAll(/\]\(([^)]+)\)/g)].map((m) => m[1]);
+  assert.ok(targets.length > 0, "expected at least one README link");
+  for (const target of targets) {
+    if (/^https?:/.test(target)) continue;
+    const relative = target.replace(/^[.][/]/, "");
+    // A relative link is only readable on npm if the file ships in the tarball.
+    assert.ok(
+      shipped.includes(relative),
+      `README links to ${target}, which is not in "files", so it 404s on npm; use a repository URL instead`,
+    );
+  }
+});
+
 test("the release guide keeps pointing at the published-release check", () => {
   assert.match(releasing, /verify-release\.sh/, "RELEASING.md must document the post-publish verification command");
 });

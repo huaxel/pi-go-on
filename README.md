@@ -46,7 +46,7 @@ VERIFY_FROM_TARBALL=1 ./scripts/verify-load.sh   # what consumers install
 
 `scripts/verify-release.sh [version]` checks a published release the way a consumer meets it: registry metadata, provenance attestation, downloaded tarball bytes against the registry shasum, working-tree parity, and a real runtime load of the published artifact. Run it after each release; maintainers can use it to confirm a release without trusting the build log.
 
-For the one-time npm bootstrap and trusted-publishing setup, see [RELEASING.md](RELEASING.md) and run `./scripts/npm-release-setup.sh` from a checkout. The wizard asks for confirmation before the initial irreversible npm publish and never stores credentials.
+For the one-time npm bootstrap and trusted-publishing setup, see [RELEASING.md](https://github.com/huaxel/pi-go-on/blob/main/RELEASING.md) and run `./scripts/npm-release-setup.sh` from a checkout. The wizard asks for confirmation before the initial irreversible npm publish and never stores credentials.
 
 ## License
 
