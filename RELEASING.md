@@ -2,10 +2,12 @@
 
 ## Current state
 
-- `0.1.0` is published manually (first release). The registry also holds `0.0.0-stage`, npm's placeholder from the staged first publish: it has no dist-tag and nothing resolves to it. Leave it alone.
-- `0.1.1` is prepared on `main` (version bump plus npm's canonical `repository.url`) and waiting to be the first OIDC publish.
-- The GitHub `npm-release` environment exists and is restricted to the `main` branch. No required reviewers are configured.
-- **Remaining blocked step:** no trusted publisher is configured yet. Configure it on npmjs.com or with the `npm trust` command below; both require an interactive 2FA prompt. `npm trust` returns `EOTP` from a non-interactive shell, so it cannot be automated.
+Trusted publishing is configured and validated; the release path is complete.
+
+- `0.1.0` was the manual first publish. The registry also holds `0.0.0-stage`, npm's placeholder from the staged first publish: it has no dist-tag and nothing resolves to it. Leave it alone.
+- `0.1.1` is `latest`, published by the **Publish to npm** workflow through OIDC with a signed SLSA provenance attestation. This validated the trusted publisher.
+- The `npm-release` environment exists and is restricted to the `main` branch. No required reviewers are configured.
+- The published tarball was checked against the repository: `0.1.1`'s `index.ts` is byte-identical to `main`, and its shasum matches the CI build output.
 
 Run `./scripts/npm-release-setup.sh` from a clean `main` checkout for the staged one-time npm bootstrap. It stops after the initial publish so the next version can be prepared and pushed before trusted-publisher setup. Publishing is a deliberate manual action. CI does not publish on pushes or tags.
 
