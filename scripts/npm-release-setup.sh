@@ -206,6 +206,8 @@ step "Repository: pi-go-on"
 step "Workflow filename: publish.yml (filename only)"
 step "Environment: npm-release"
 step "Allowed action: npm publish"
+say "CLI alternative after npm login with 2FA (npm CLI 11.15.0+):"
+step "npm trust github $PACKAGE --file publish.yml --repo huaxel/pi-go-on --env npm-release --allow-publish"
 say "The first successful OIDC publish must complete within two days of creating this configuration."
 pause "Complete the npm setup, then press Enter"
 

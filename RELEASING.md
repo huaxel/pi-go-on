@@ -7,7 +7,7 @@ Run `./scripts/npm-release-setup.sh` from a clean `main` checkout for the staged
 npm requires the package to exist before a trusted publisher can be configured. The initial publish is therefore a one-time manual action; no npm publish was performed during repository preparation.
 
 1. Review `main`, confirm version `0.1.0` is unused, and run `npm ci`, tests, typecheck, audit, and pack checks.
-2. With the maintainer's npm account, run `npm publish --access public` from this repository. Complete npm's requested authentication/2FA. This action is irreversible for that version.
+2. With the maintainer's npm account, log in with `npm login` and run `npm publish --access public` from this repository. Complete npm's requested authentication/2FA. This is a human-only interactive step: npm does not support OIDC for a package's first publish, and the trusted-publisher settings page only exists once the package does. The action is irreversible for that version.
 3. Prepare the next version (for example, `0.1.1`): update `package.json` and lockfile, run all checks, commit and push to `main`, and wait for CI to pass. Do this before configuring trusted publishing so the first OIDC publish can validate the publisher promptly.
 4. Configure the package's trusted publisher at npmjs.com → package `@juanbenjumea/pi-go-on` → Settings → Trusted Publisher:
    - Provider: GitHub Actions
@@ -16,6 +16,14 @@ npm requires the package to exist before a trusted publisher can be configured. 
    - Workflow filename: `publish.yml` (filename only, not the `.github/workflows/` path)
    - Environment: `npm-release`
    - Allowed action: `npm publish`
+
+   The CLI equivalent, after `npm login` with 2FA enabled on the account (requires npm CLI 11.15.0+ and an existing package), is:
+
+   ```bash
+   npm trust github @juanbenjumea/pi-go-on \
+     --file publish.yml --repo huaxel/pi-go-on --env npm-release --allow-publish
+   ```
+
 5. Configure the GitHub `npm-release` environment to restrict deployments to the `main` branch. Optionally add required reviewers as an additional approval gate. The workflow also refuses runs not dispatched from `main`. The first trusted-publisher publish must succeed within npm's two-day validation window.
 
 ## Each later release
