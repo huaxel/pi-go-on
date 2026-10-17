@@ -5,9 +5,10 @@
 Trusted publishing is configured and validated; the release path is complete.
 
 - `0.1.0` was the manual first publish. The registry also holds `0.0.0-stage`, npm's placeholder from the staged first publish: it has no dist-tag and nothing resolves to it. Leave it alone.
-- `0.1.1` is `latest`, published by the **Publish to npm** workflow through OIDC with a signed SLSA provenance attestation. This validated the trusted publisher.
+- `0.1.1` was the first OIDC publish, validating the trusted publisher.
+- `0.1.2` is `latest`: it ships the npm README fixes (a link that 404'd because `RELEASING.md` is not in `files`, plus the migration warning about enabling both the package and a standalone file copy). Verified end to end with `./scripts/verify-release.sh 0.1.2`.
 - The `npm-release` environment exists and is restricted to the `main` branch. No required reviewers are configured.
-- The published tarball was checked against the repository: `0.1.1`'s `index.ts` is byte-identical to `main`, its shasum matches the CI build output, and `./scripts/verify-release.sh` reports it verified end to end.
+- The published tarball was checked against the repository for both `0.1.1` and `0.1.2`: each release's `index.ts` is byte-identical to `main`, its shasum matches the registry, and `./scripts/verify-release.sh` reports it verified end to end.
 
 Run `./scripts/npm-release-setup.sh` from a clean `main` checkout for the staged one-time npm bootstrap. It stops after the initial publish so the next version can be prepared and pushed before trusted-publisher setup. Publishing is a deliberate manual action. CI does not publish on pushes or tags.
 
