@@ -30,10 +30,12 @@ Auto mode is intentionally bounded and heuristic. The extension's completion det
 ## Development
 
 ```bash
-npm install
+npm ci
 npm test
 npm run typecheck
 ```
+
+For the one-time npm bootstrap and trusted-publishing setup, see [RELEASING.md](RELEASING.md) and run `./scripts/npm-release-setup.sh` from a checkout. The wizard asks for confirmation before the initial irreversible npm publish and never stores credentials.
 
 ## License
 
