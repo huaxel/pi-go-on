@@ -24,5 +24,6 @@ jobs:
       - run: npm run typecheck
       - run: npm audit
       - run: npm pack --dry-run
-      - run: bash -n scripts/npm-release-setup.sh
+      - run: bash -n scripts/*.sh
+      - run: ./scripts/verify-load.sh
       - run: npm publish --access public
