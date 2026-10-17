@@ -21,6 +21,7 @@ test("npm publication is manual and restricted to main", () => {
   assert.match(workflow, /already exists on npm/);
   assert.match(workflow, /concurrency:\n\s+group: npm-publish-/, "release runs must be serialized");
   assert.match(workflow, /cancel-in-progress: false/);
+  assert.match(workflow, /VERIFY_FROM_TARBALL=1/, "the publish workflow must load-check the real tarball");
   assert.ok(workflow.indexOf("npm audit") < workflow.indexOf("npm publish --access public"));
   assert.ok(!workflow.includes("NODE_AUTH_TOKEN"));
 });

@@ -5,11 +5,15 @@
 # Binary resolution: $PI_BIN, then the pi CLI bundled with the SDK dev
 # dependency (so CI runs this for real after `npm ci`), then `pi` on PATH.
 # Only when no binary exists anywhere does this report SKIP and exit 0.
+#
+# Source under test: the working tree by default, or the packed tarball when
+# VERIFY_FROM_TARBALL=1 — the file set a consumer actually installs.
 set -euo pipefail
 
 REPO_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 EXPECTED_COMMAND=${EXPECTED_COMMAND:-go-on-mode}
 DEADLINE_SECONDS=${DEADLINE_SECONDS:-30}
+VERIFY_FROM_TARBALL=${VERIFY_FROM_TARBALL:-0}
 
 PI_BIN=${PI_BIN:-}
 if [ -z "$PI_BIN" ] && [ -x "$REPO_DIR/node_modules/.bin/pi" ]; then
@@ -49,11 +53,34 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# What a consumer installs is the packed tarball, not the working tree: load
+# the tarball's own contents so a wrong `files` list or manifest cannot ship.
+load_dir="$REPO_DIR"
+label="working tree"
+if [ "$VERIFY_FROM_TARBALL" = "1" ]; then
+  pack_dir=$(mktemp -d)
+  (cd "$REPO_DIR" && npm pack --silent --pack-destination "$pack_dir" >/dev/null)
+  tarball=$(ls "$pack_dir"/*.tgz 2>/dev/null | head -1)
+  if [ -z "$tarball" ]; then
+    echo "FAIL: npm pack produced no tarball" >&2
+    exit 1
+  fi
+  mkdir -p "$pack_dir/extracted"
+  tar -xzf "$tarball" -C "$pack_dir/extracted"
+  load_dir="$pack_dir/extracted/package"
+  label="packed tarball $(basename "$tarball")"
+  if [ ! -f "$load_dir/index.ts" ]; then
+    echo "FAIL: the packed tarball does not contain index.ts" >&2
+    ls -la "$load_dir" >&2 || true
+    exit 1
+  fi
+fi
+
 # No model turn is used, so no credentials are needed: keep the agent dir and
 # network isolated from the developer's real configuration.
 mkfifo "$fifo"
 with_timeout env PI_CODING_AGENT_DIR="$agent_dir" PI_OFFLINE=1 "$PI_BIN" --mode rpc \
-  --no-session --no-mcp --no-extensions -e "$REPO_DIR" <"$fifo" >"$out" 2>"$err" &
+  --no-session --no-mcp --no-extensions -e "$load_dir" <"$fifo" >"$out" 2>"$err" &
 pi_pid=$!
 
 # Hold stdin open and close it only once the runtime has answered, so a slow
@@ -80,22 +107,22 @@ wait "$pi_pid" || pi_status=$?
 pi_pid=""
 
 if [ "$registered" -ne 1 ]; then
-  echo "FAIL: /$EXPECTED_COMMAND was not registered by the loaded package (pi exit=$pi_status)" >&2
+  echo "FAIL: /$EXPECTED_COMMAND was not registered by $label (pi exit=$pi_status)" >&2
   grep -viE '^Warning: No models match' "$err" | head -20 >&2 || true
   cut -c1-800 "$out" >&2 || true
   exit 1
 fi
 
 if grep -viE '^Warning: No models match' "$err" | grep -qi 'extension'; then
-  echo "FAIL: pi reported an extension problem:" >&2
+  echo "FAIL: pi reported an extension problem loading $label:" >&2
   grep -viE '^Warning: No models match' "$err" | head -20 >&2
   exit 1
 fi
 
 if [ "$pi_status" -ne 0 ]; then
-  echo "FAIL: $PI_BIN exited with status $pi_status while loading $REPO_DIR" >&2
+  echo "FAIL: $PI_BIN exited with status $pi_status while loading $label" >&2
   grep -viE '^Warning: No models match' "$err" | head -20 >&2 || true
   exit 1
 fi
 
-echo "OK: $PI_BIN loaded the package and registered /$EXPECTED_COMMAND"
+echo "OK: $PI_BIN loaded $label and registered /$EXPECTED_COMMAND"

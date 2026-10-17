@@ -31,6 +31,7 @@ jobs:
       - run: npm pack --dry-run
       - run: bash -n scripts/*.sh
       - run: ./scripts/verify-load.sh
+      - run: VERIFY_FROM_TARBALL=1 ./scripts/verify-load.sh
       - name: Refuse to republish an existing version
         run: |
           set -euo pipefail
