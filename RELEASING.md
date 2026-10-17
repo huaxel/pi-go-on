@@ -40,4 +40,13 @@ npm requires the package to exist before a trusted publisher can be configured. 
 3. For the initial OIDC validation, within two days of configuring the trusted publisher, manually run **Publish to npm** on the reviewed `main` branch. For later releases, run it after CI passes for the intended version. The workflow repeats tests, typecheck, audit, and pack checks before publishing via npm's OIDC trusted-publishing support.
 4. Verify the resulting npm version and provenance page. Do not rerun a failed publish without checking whether that version was already published.
 
+## Diagnosing an OIDC publish failure
+
+Attempting the workflow before the trusted publisher exists fails at the final step and publishes nothing (verified twice):
+
+- `npm error code ENEEDAUTH ... need auth` — npm had no trusted-publisher match for this workflow identity. Check the configured organization/user, repository, workflow filename, and environment name against the values above; all four are case-sensitive and must match exactly.
+- `npm error code E404 ... PUT ... could not be found or you do not have permission` — an npm token, not OIDC, was used. Keep `registry-url` out of `actions/setup-node`, because it writes an `_authToken` placeholder that preempts OIDC authentication.
+
+Everything before the publish step (tests, typecheck, audit, pack, script syntax, runtime load check) runs and passes in the failing runs, so an auth failure means the release itself is fine and only the publisher configuration is missing or mismatched.
+
 The publish workflow is manual-only. Trusted publishing automatically generates provenance for eligible public releases; it does not require a long-lived npm token or `--provenance` flag.
