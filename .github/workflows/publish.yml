@@ -7,6 +7,12 @@ permissions:
   id-token: write
   contents: read
 
+# Publishing is irreversible for a given version, so serialize release runs
+# instead of letting two dispatches race the republish guard.
+concurrency:
+  group: npm-publish-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
     if: github.ref == 'refs/heads/main'

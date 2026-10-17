@@ -19,6 +19,8 @@ test("npm publication is manual and restricted to main", () => {
   const guard = workflow.indexOf("Refuse to republish an existing version");
   assert.ok(guard >= 0 && guard < workflow.indexOf("npm publish --access public"), "a republish guard must run before publishing");
   assert.match(workflow, /already exists on npm/);
+  assert.match(workflow, /concurrency:\n\s+group: npm-publish-/, "release runs must be serialized");
+  assert.match(workflow, /cancel-in-progress: false/);
   assert.ok(workflow.indexOf("npm audit") < workflow.indexOf("npm publish --access public"));
   assert.ok(!workflow.includes("NODE_AUTH_TOKEN"));
 });
